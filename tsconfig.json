@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2019", // Указывает версию ECMAScript, на которую будет транслироваться код.
+    "module": "CommonJS", // Используется для совместимости с Node.js.
+    "rootDir": "./src", // Корневая папка исходного кода.
+    "outDir": "./dist", // Папка для скомпилированных файлов.
+    "strict": true, // Включает все строгие проверки TypeScript.
+    "esModuleInterop": true, // Обеспечивает совместимость с CommonJS модулями.
+    "forceConsistentCasingInFileNames": true, // Требует согласованного использования регистра в именах файлов.
+    "skipLibCheck": true, // Пропускает проверку типов в файлах библиотеки.
+    "moduleResolution": "node", // Использует модульную систему разрешения модулей Node.js.
+    "baseUrl": "./", // Базовый путь для разрешения не относительных импортов.
+    "paths": {
+      // Настройка алиасов.
+      "@models/*": ["src/models/*"],
+      "@controllers/*": ["src/controllers/*"],
+      "@routes/*": ["src/routes/*"],
+      "@utils/*": ["src/utils/*"],
+      "@middlewares/*": ["src/middlewares/*"]
+    },
+    "resolveJsonModule": true, // Позволяет импортировать JSON-файлы как модули.
+    "typeRoots": ["./node_modules/@types", "./src/types"], // Папки с определениями типов.
+    "allowSyntheticDefaultImports": true // Позволяет использовать импорт по умолчанию из модулей без него.
+  },
+  "include": ["src/**/*"], // Включает все файлы из папки src.
+  "exclude": ["node_modules", "**/*.spec.ts"] // Исключает папку node_modules и файлы тестов.
+}
