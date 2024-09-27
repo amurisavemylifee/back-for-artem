@@ -16,6 +16,7 @@
     "@types/mongoose": "^5.11.97",
     "@types/node": "^22.7.2",
     "@types/sequelize": "^4.28.20",
+    "@types/morgan": "^1.9.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.2",
     "vite": "^5.4.6"
@@ -27,6 +28,7 @@
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.6.2",
+    "morgan": "^1.10.0",
     "sequelize": "^6.37.3",
     "sqlite3": "^5.1.7",
     "tsconfig-paths": "^4.2.0"

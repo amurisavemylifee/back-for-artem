@@ -31,6 +31,14 @@ User.init(
       type: new DataTypes.STRING(128),
       allowNull: true,
     },
+    username: {
+      type: new DataTypes.STRING(128),
+      allowNull: false,
+    },
+    firstName: {
+      type: new DataTypes.STRING(128),
+      allowNull: false,
+    },
   },
   {
     tableName: "users",
@@ -46,7 +54,7 @@ User.init(
   }
 );
 
-User.sync({ force: true });
+User.sync();
 
 User.prototype.comparePassword = async function (
   password: string

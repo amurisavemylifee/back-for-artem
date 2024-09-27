@@ -1,6 +1,7 @@
-import { Request, Response } from "express";
 import User from "../models/User";
 import jwt from "jsonwebtoken";
+import { ErrorType } from "src/types/errors";
+import { IRequest, IResponse } from "src/types/utils";
 
 const JWT_SECRET = "TORPEDNU-EMU-EJI";
 const JWT_REFRESH_SECRET = "NAXYU-TI-TAK-SRAL";
@@ -18,14 +19,11 @@ function createRefreshToken(userId: number) {
 }
 
 export async function register(
-  req: Request<unknown, unknown, { email: string; password: string }>,
-  res: Response<
-    | {
-        accessToken: string;
-        refreshToken: string;
-      }
-    | { message: string; error?: unknown }
-  >
+  req: IRequest<{ email: string; password: string }>,
+  res: IResponse<{
+    accessToken: string;
+    refreshToken: string;
+  }>
 ) {
   const { email, password } = req.body;
 
@@ -33,7 +31,9 @@ export async function register(
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({
+        isSuccess: false,
         message: "Пользователь с таким email уже существует",
+        errorCode: ErrorType.USER_WITH_THIS_EMAIL_ALREADY_EXISTS,
       });
     }
 
@@ -47,23 +47,27 @@ export async function register(
     await user.save();
 
     res.status(201).json({
-      accessToken,
-      refreshToken,
+      isSuccess: true,
+      result: {
+        accessToken,
+        refreshToken,
+      },
     });
   } catch (error) {
-    res.status(500).json({ message: "Ошибка сервера", error });
+    res.status(500).json({
+      isSuccess: false,
+      message: "Ошибка сервера",
+      errorCode: ErrorType.INTERNAL_SERVER_ERROR,
+    });
   }
 }
 
 export async function login(
-  req: Request<unknown, unknown, { email: string; password: string }>,
-  res: Response<
-    | {
-        accessToken: string;
-        refreshToken: string;
-      }
-    | { message: string; error?: unknown }
-  >
+  req: IRequest<{ email: string; password: string }>,
+  res: IResponse<{
+    accessToken: string;
+    refreshToken: string;
+  }>
 ) {
   const { email, password } = req.body;
 
@@ -71,14 +75,18 @@ export async function login(
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
-      return res
-        .status(400)
-        .json({ message: "Пользователя с таким email не существует" });
+      return res.status(400).json({
+        isSuccess: false,
+        message: "Пользователя с таким email не существует",
+        errorCode: ErrorType.USER_WITH_THIS_EMAIL_NOT_FOUND,
+      });
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Неверный пароль" });
+      return res
+        .status(400)
+        .json({ isSuccess: false, message: "Неверный пароль" });
     }
 
     const accessToken = createAccessToken(user.id);
@@ -88,24 +96,32 @@ export async function login(
     await user.save();
 
     res.json({
-      accessToken,
-      refreshToken,
+      isSuccess: true,
+      result: {
+        accessToken,
+        refreshToken,
+      },
     });
   } catch (error) {
-    res.status(500).json({ message: "Ошибка сервера", error });
+    console.log(error);
+    res.status(500).json({
+      isSuccess: false,
+      message: "Ошибка сервера",
+      errorCode: ErrorType.INTERNAL_SERVER_ERROR,
+    });
   }
 }
 
-export const refreshAccessToken = async (
-  req: Request<unknown, unknown, { refreshToken: string }>,
-  res: Response<
-    { accessToken: string; refreshToken: string } | { message: string }
-  >
-) => {
+export async function refreshAccessToken(
+  req: IRequest<{ refreshToken: string }>,
+  res: IResponse<{ accessToken: string; refreshToken: string }>
+) {
   const { refreshToken } = req.body;
 
   if (!refreshToken) {
-    return res.status(400).json({ message: "Токен обновления отсутствует" });
+    return res
+      .status(400)
+      .json({ isSuccess: false, message: "Токен обновления отсутствует" });
   }
 
   try {
@@ -115,7 +131,9 @@ export const refreshAccessToken = async (
     const user = await User.findOne({ where: { _id: decoded.userId } });
 
     if (!user || user.refreshToken !== refreshToken) {
-      return res.status(401).json({ message: "Неверный токен обновления" });
+      return res
+        .status(401)
+        .json({ isSuccess: false, message: "Неверный токен обновления" });
     }
 
     const newAccessToken = createAccessToken(user.id);
@@ -125,10 +143,60 @@ export const refreshAccessToken = async (
     await user.save();
 
     res.json({
-      accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
+      isSuccess: true,
+      result: {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      },
     });
   } catch (error) {
-    res.status(401).json({ message: "Неверный или истекший токен обновления" });
+    console.log(error);
+    res.status(401).json({
+      isSuccess: false,
+      message: "Неверный или истекший токен обновления",
+    });
   }
-};
+}
+
+export async function resetPassword(
+  req: IRequest<{ email: string }>,
+  res: IResponse<{ password: string }>
+) {
+  function generateNewPassword() {
+    const characters =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let newPassword = "";
+    for (let i = 0; i < 16; i++) {
+      newPassword += characters.charAt(
+        Math.floor(Math.random() * characters.length)
+      );
+    }
+    return newPassword;
+  }
+
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(400).json({
+        isSuccess: false,
+        message: "Пользователя с таким email не существует",
+        errorCode: ErrorType.USER_WITH_THIS_EMAIL_NOT_FOUND,
+      });
+    }
+
+    user.password = generateNewPassword();
+    await user.save();
+
+    res.json({ isSuccess: true, result: { password: user.password } });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      isSuccess: false,
+      message: "Ошибка сервера",
+      errorCode: ErrorType.INTERNAL_SERVER_ERROR,
+    });
+  }
+}
