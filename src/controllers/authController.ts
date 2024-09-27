@@ -19,13 +19,18 @@ function createRefreshToken(userId: number) {
 }
 
 export async function register(
-  req: IRequest<{ email: string; password: string }>,
+  req: IRequest<{
+    email: string;
+    password: string;
+    firstName: string;
+    username: string;
+  }>,
   res: IResponse<{
     accessToken: string;
     refreshToken: string;
   }>
 ) {
-  const { email, password } = req.body;
+  const { email, password, firstName, username } = req.body;
 
   try {
     const existingUser = await User.findOne({ where: { email } });
@@ -37,7 +42,7 @@ export async function register(
       });
     }
 
-    const user = new User({ email, password });
+    const user = new User({ email, password, firstName, username });
     await user.save();
 
     const accessToken = createAccessToken(user.id);

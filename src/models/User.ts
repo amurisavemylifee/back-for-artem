@@ -6,6 +6,8 @@ class User extends Model {
   public id!: number;
   public email!: string;
   public password!: string;
+  public username!: string;
+  public firstName!: string;
   public refreshToken!: string;
 
   public comparePassword!: (password: string) => Promise<boolean>;
