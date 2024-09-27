@@ -191,11 +191,12 @@ export async function resetPassword(
         errorCode: ErrorType.USER_WITH_THIS_EMAIL_NOT_FOUND,
       });
     }
+    const newPassword = generateNewPassword();
+    user.password = newPassword;
 
-    user.password = generateNewPassword();
     await user.save();
 
-    res.json({ isSuccess: true, result: { password: user.password } });
+    res.json({ isSuccess: true, result: { password: newPassword } });
   } catch (error) {
     console.log(error);
     res.status(500).json({
